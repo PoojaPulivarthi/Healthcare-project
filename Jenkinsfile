@@ -24,23 +24,24 @@ pipeline {
     stage('Docker-Login') {
       steps {
            withCredentials([usernamePassword(credentialsId: 'docker-login', passwordVariable: 'dockerpassword', usernameVariable: 'dockerlogin')]) {
-           sh 'docker login -u ${dockerlogin} -p ${dockerpassword}'
+           sh "echo $dockerpassword | docker login -u $dockerlogin --password-stdin"
            sh 'docker push poojapulivarthi39/healthcare-project:v1'
                               }
                         }
                 }
-     stage('Config & Deployment') {
-       steps {
-                withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'AwsAccessKey', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                    dir('terraform-files') {
-                    sh 'sudo chmod 600 mumbaikey.pem'
-                    sh 'terraform init'
-                    sh 'terraform validate'
-                    sh 'terraform apply --auto-approve'
-                    }
-                }   
-            }
+     stage('Terraform Operations for test workspace') {
+      steps {
+        script {
+          sh '''
+            terraform workspace select test || terraform workspace new test
+            terraform init
+            terraform plan
+            terraform destroy -auto-approve
+            terraform apply -auto-approve
+          '''
         }
+      }
+    }
     
      stage('Deploy to EKS') {
        steps {
