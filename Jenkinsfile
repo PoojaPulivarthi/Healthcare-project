@@ -1,9 +1,6 @@
 pipeline {
   agent any
-  environment {
-    AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
-    AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
-  }
+  
   stages {
     stage('build the project') {
       steps {
@@ -30,12 +27,17 @@ pipeline {
     stage('Terraform Operations for test workspace') {
       steps {
         script {
+          withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
+                                       accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
+                                       credentialsId: 'aws-credentials', 
+                                       secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
           sh '''
             terraform workspace select test || terraform workspace new test
             terraform init
             terraform plan
             terraform destroy -auto-approve
           '''
+        }
         }
       }
     }
@@ -64,12 +66,17 @@ pipeline {
       }
       steps {
         script {
+          withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
+                                       accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
+                                       credentialsId: 'aws-credentials', 
+                                       secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]){
           sh '''
             terraform workspace select prod || terraform workspace new prod
             terraform init
             terraform plan
             terraform destroy -auto-approve
           '''
+        }
         }
       }
     }
