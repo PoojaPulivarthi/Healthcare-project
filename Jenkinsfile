@@ -1,19 +1,17 @@
 pipeline {
   agent any
-   tools {
-        // Install the Maven version configured as "M3" and add it to the path.
-        maven "M2_HOME"
-        git "git s/w"
-    }
-
+  environment {
+    AWS_ACCESS_KEY_ID = credentials('aws-access-key-id')
+    AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
+  }
   stages {
-    stage('build mvn project') {
+    stage('build the project') {
       steps {
-        git 'https://github.com/lax66/star-agile-health-care_CAP02.git'
+        git 'https://github.com/PoojaPulivarthi/Healthcare-project.git'
         sh 'mvn clean package'
       }
     }
-    stage('Build docker image') {
+    stage('Building docker image') {
       steps {
         script {
           sh 'docker build -t poojapulivarthi39/healthcare-project:v1 .'
@@ -21,15 +19,15 @@ pipeline {
         }
       }
     }
-    stage('Docker-Login') {
+    stage('push to docker-hub') {
       steps {
-           withCredentials([usernamePassword(credentialsId: 'docker-login', passwordVariable: 'dockerpassword', usernameVariable: 'dockerlogin')]) {
-           sh "echo $dockerpassword | docker login -u $dockerlogin --password-stdin"
-           sh 'docker push poojapulivarthi39/healthcare-project:v1'
-                              }
-                        }
-                }
-     stage('Terraform Operations for test workspace') {
+        withCredentials([usernamePassword(credentialsId: 'docker-creds', passwordVariable: 'dockerpassword', usernameVariable: 'dockerlogin')]) {
+          sh "echo $dockerpassword | docker login -u $dockerlogin --password-stdin"
+          sh 'docker push poojapulivarthi39/healthcare-project:v1'
+        }
+      }
+    }
+    stage('Terraform Operations for test workspace') {
       steps {
         script {
           sh '''
@@ -37,25 +35,60 @@ pipeline {
             terraform init
             terraform plan
             terraform destroy -auto-approve
-            terraform apply -auto-approve
           '''
         }
       }
     }
-    
-     stage('Deploy to EKS') {
-       steps {
-                script {
-                    // Set up AWS credentials
-                    sh '/usr/local/bin/aws eks update-kubeconfig --name eks-healthcare-cluster --region ap-south-1'
-                    
-                    // Apply Kubernetes manifests to deploy the app
-                    sh 'kubectl apply -f k8s-deploy.yaml'
-                }
-            }
+    stage('Terraform destroy & apply for test workspace') {
+      steps {
+        sh 'terraform apply -auto-approve'
+      }
+    }
+    stage('get kubeconfig') {
+      steps {
+        sh 'aws eks update-kubeconfig --region ap-south-1 --name test-cluster'
+        sh 'kubectl get nodes'
+      }
+    }
+    stage('Deploying the application') {
+      steps {
+        sh 'kubectl apply -f k8s-deploy.yml'
+        sh 'kubectl get svc'
+      }
+    }
+    stage('Terraform Operations for Production workspace') {
+      when {
+        expression {
+          return currentBuild.currentResult == 'SUCCESS'
         }
-
-    
-    
+      }
+      steps {
+        script {
+          sh '''
+            terraform workspace select prod || terraform workspace new prod
+            terraform init
+            terraform plan
+            terraform destroy -auto-approve
+          '''
+        }
+      }
+    }
+    stage('Terraform destroy & apply for production workspace') {
+      steps {
+        sh 'terraform apply -auto-approve'
+      }
+    }
+    stage('get kubeconfig for production') {
+      steps {
+        sh 'aws eks update-kubeconfig --region ap-south-1 --name prod-cluster'
+        sh 'kubectl get nodes'
+      }
+    }
+    stage('Deploying the application to production') {
+      steps {
+        sh 'kubectl apply -f k8s-deploy.yml'
+        sh 'kubectl get svc'
+      }
+    }
   }
 }
