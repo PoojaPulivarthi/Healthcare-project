@@ -16,7 +16,20 @@ module "vpc" {
 # EKS Module
 module "eks" {
   source          = "terraform-aws-modules/eks/aws"
-  version         = "18.29.0"
+  version         = "19.0.0"
+
+  cluster_addons = {
+    coredns = {
+      most_recent = true
+    }
+    kube-proxy = {
+      most_recent = true
+    }
+    vpc-cni = {
+      most_recent = true
+    }
+  }
+
 
   cluster_name    = local.name
   cluster_version = "1.24"  # Specify the Kubernetes version
