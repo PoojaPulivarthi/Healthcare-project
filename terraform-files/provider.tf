@@ -2,11 +2,15 @@ provider "aws" {
 region = "ap-south-1"
 }
 
-# Locals for reusable values
 locals {
-  name = "eks-healthcare-cluster"          
-  vpc_cidr_block  = "10.0.0.0/16"             # VPC CIDR block
-  public_subnets  = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]  # Public subnets
-  private_subnets = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"] # Private subnets
-  azs             = ["ap-south-1a", "ap-south-1b", "ap-south-1c"]  # Availability zones in ap-south-1
+  region = "ap-south-1"
+  name   = "${terraform.workspace}-cluster"
+  vpc_cidr = "10.123.0.0/16"
+  azs      = ["us-east-1a", "us-east-1b"]
+  public_subnets  = ["10.123.1.0/24", "10.123.2.0/24"]
+  private_subnets = ["10.123.3.0/24", "10.123.4.0/24"]
+  intra_subnets   = ["10.123.5.0/24", "10.123.6.0/24"]
+  tags = {
+    Example = local.name
+  }
 }
