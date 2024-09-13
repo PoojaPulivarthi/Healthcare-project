@@ -28,7 +28,7 @@ pipeline {
                         }
                 }
      stage('Config & Deployment') {
-            steps {
+       steps {
                 withCredentials([aws(accessKeyVariable: 'AWS_ACCESS_KEY_ID', credentialsId: 'AwsAccessKey', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                     dir('terraform-files') {
                     sh 'sudo chmod 600 mumbaikey.pem'
@@ -39,7 +39,20 @@ pipeline {
                 }   
             }
         }
+    
+     stage('Deploy to EKS') {
+       steps {
+                script {
+                    // Set up AWS credentials
+                    sh 'aws eks update-kubeconfig --name healthcare-server --region ap-south-1'
+                    
+                    // Apply Kubernetes manifests to deploy the app
+                    sh 'kubectl apply -f k8s-deploy.yaml'
+                }
+            }
+        }
 
+    
     
   }
 }
