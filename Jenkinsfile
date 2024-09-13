@@ -29,7 +29,7 @@ pipeline {
         script {
           withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', 
                                        accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
-                                       credentialsId: 'aws-credentials', 
+                                       credentialsId: 'aws-access-key-id', 
                                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
           sh '''
             terraform workspace select test || terraform workspace new test
