@@ -47,7 +47,7 @@ pipeline {
        steps {
                 script {
                     // Set up AWS credentials
-                    sh 'aws eks update-kubeconfig --name eks-healthcare-cluster --region ap-south-1'
+                    sh '/usr/local/bin/aws eks update-kubeconfig --name eks-healthcare-cluster --region ap-south-1'
                     
                     // Apply Kubernetes manifests to deploy the app
                     sh 'kubectl apply -f k8s-deploy.yaml'
