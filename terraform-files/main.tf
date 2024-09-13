@@ -15,23 +15,29 @@ module "vpc" {
 
 # EKS Module
 module "eks" {
-  source          = "terraform-aws-modules/eks/aws"
-  version         = "19.0.1"
+  source  = "terraform-aws-modules/eks/aws"
+  version = "19.15.1"  # Or use a specific stable version
 
   cluster_addons = {
     coredns = {
       most_recent = true
+      resolve_conflicts_on_create = "OVERWRITE"
+      resolve_conflicts_on_update = "OVERWRITE"
     }
     kube-proxy = {
       most_recent = true
+      resolve_conflicts_on_create = "OVERWRITE"
+      resolve_conflicts_on_update = "OVERWRITE"
     }
     vpc-cni = {
       most_recent = true
+      resolve_conflicts_on_create = "OVERWRITE"
+      resolve_conflicts_on_update = "OVERWRITE"
     }
   }
 
   cluster_name    = local.name
-  cluster_version = "1.24"  # Specify the Kubernetes version
+  cluster_version = "1.24"
   subnets         = module.vpc.private_subnets
   vpc_id          = module.vpc.vpc_id
 
@@ -45,7 +51,7 @@ module "eks" {
     }
   }
 
-  enable_irsa = true  # Enable IAM Roles for Service Accounts (IRSA)
+  enable_irsa = true
 }
 
 # Direct Outputs (Embedded in main.tf)
